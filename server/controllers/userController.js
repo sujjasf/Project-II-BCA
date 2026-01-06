@@ -44,7 +44,7 @@ export const createUser = async (req, res) => {
     // Send the code to the user's email
     const msg = {
       to: savedUser.email,
-      from: 'support@sujjalkhadka.com.np',
+      from: process.env.EMAIL_FROM || 'support@sujjalkhadka.com.np',
       subject: 'Your Electomart Email Verification Code',
       text: `Your verification code is: ${emailVerificationToken}`,
       html: `<p>Your Electomart verification code is: <b>${emailVerificationToken}</b></p>`,
@@ -98,7 +98,15 @@ export const loginUser = async (req, res) => {
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-    // Allow login even if not verified
+
+    if (!user.isEmailVerified) {
+      return res.status(403).json({ 
+        message: "Email not verified. Please verify your email first.",
+        isEmailVerified: false 
+      });
+    }
+
+    // Allow login even if not verified (Commented out old logic description or just proceed)
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
@@ -208,7 +216,7 @@ export const requestPasswordReset = async (req, res, next) => {
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
     const msg = {
       to: user.email,
-      from: 'support@sujjalkhadka.com.np',
+      from: process.env.EMAIL_FROM || 'support@sujjalkhadka.com.np',
       subject: 'Password Reset Request',
       text: `Reset your password: ${resetUrl}`,
       html: `<p>Click <a href="${resetUrl}">here</a> to reset your password.</p>`,
